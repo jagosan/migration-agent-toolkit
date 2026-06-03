@@ -1,0 +1,23 @@
+
+# Migration Manifest Template
+# Use this file to track the state of a migration project.
+
+project_name: "example-migration"
+version: "1.0.0"
+source_provider: "aws"
+target_provider: "gcp"
+
+resources:
+  - id: "res-001"
+    type: "database"
+    source_ref: "aws_rds_instance_id"
+    target_ref: "gcp_cloud_sql_instance_id"
+    status: "pending" # pending | audited | translated | migrated | verified
+    dependencies: []
+    migration_strategy: "snapshot_restore"
+
+validation_suite:
+  - check: "row_count_match"
+    critical: true
+  - check: "endpoint_connectivity"
+    critical: true
