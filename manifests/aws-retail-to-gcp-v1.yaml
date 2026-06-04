@@ -1,0 +1,67 @@
+version: "1.0"
+migration_id: "aws-retail-to-gcp-001"
+timestamp: "2026-06-04T03:00:00Z"
+status: "discovery_complete"
+
+source_environment:
+  provider: "aws"
+  region: "us-east-1"
+  cluster_name: "retail-store"
+
+resources:
+  compute:
+    - id: "ui"
+      type: "k8s_deployment"
+      namespace: "ui"
+      gcp_target: "gke_deployment"
+      dependencies: ["catalog", "checkout", "orders"]
+    - id: "catalog"
+      type: "k8s_deployment"
+      namespace: "catalog"
+      gcp_target: "gke_deployment"
+      dependencies: ["catalog_db", "catalog_search"]
+    - id: "checkout"
+      type: "k8s_deployment"
+      namespace: "checkout"
+      gcp_target: "gke_deployment"
+      dependencies: ["carts_db"]
+    - id: "orders"
+      type: "k8s_deployment"
+      namespace: "orders"
+      gcp_target: "gke_deployment"
+      dependencies: ["orders_db"]
+    - id: "carts"
+      type: "k8s_deployment"
+      namespace: "carts"
+      gcp_target: "gke_deployment"
+      dependencies: ["carts_db"]
+
+  databases:
+    - id: "catalog_db"
+      aws_id: "retail-store-catalog-one"
+      engine: "aurora-mysql"
+      gcp_target: "cloud_sql_mysql"
+      migration_strategy: "dump_and_restore"
+    - id: "orders_db"
+      aws_id: "retail-store-orders-one"
+      engine: "aurora-postgresql"
+      gcp_target: "cloud_sql_postgresql"
+      migration_strategy: "dump_and_restore"
+    - id: "carts_db"
+      # Based on app logic, carts usually share an RDS or use DynamoDB; in this sample it's usually integrated.
+      aws_id: "retail-store-orders-one" # Shared cluster in this sample
+      engine: "aurora-postgresql"
+      gcp_target: "cloud_sql_postgresql"
+      migration_strategy: "dump_and_restore"
+
+  search:
+    - id: "catalog_search"
+      aws_id: "retail-store-catalog"
+      engine: "opensearch"
+      gcp_target: "cloud_search_or_elasticsearch"
+      migration_strategy: "snapshot_restore"
+
+networking:
+  load_balancer:
+    aws_id: "k8s-ui-ui-d7ca157cca-377e31a33b6f06f4.elb.us-east-1.amazonaws.com"
+    gcp_target: "gce_ingress_lb"
